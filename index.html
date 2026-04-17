@@ -1,78 +1,84 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Firebase RTDB Debugger</title>
+    <title>Firebase Fix</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 50px; }
-        #status { color: orange; font-weight: bold; }
-        .success { color: green; }
-        .error { color: red; }
-        input { padding: 10px; width: 250px; margin: 10px; }
-        button { padding: 10px 20px; cursor: pointer; background: #007bff; color: white; border: none; }
+        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f4f4f4; }
+        .box { background: white; padding: 20px; border-radius: 10px; display: inline-block; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        #log { margin-top: 20px; text-align: left; color: #333; font-size: 12px; max-width: 400px; margin-left: auto; margin-right: auto; }
+        .error { color: red; font-weight: bold; }
+        .success { color: green; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <h2>Firebase Connection Status: <span id="status">Connecting...</span></h2>
-    <input type="text" id="msgInput" placeholder="Write something...">
-    <button onclick="saveData()">Save to RTDB</button>
-    
-    <div id="display" style="margin-top:20px; border:1px solid #ccc; padding:10px; min-height:50px;"></div>
+<div class="box">
+    <h2>Status: <span id="connStatus">Wait...</span></h2>
+    <input type="text" id="myData" placeholder="Type something...">
+    <button onclick="sendData()">Save & Show</button>
+    <div id="list" style="margin-top:20px;"></div>
+</div>
 
-    <script type="module">
-        import { initializeApp } from "https://gstatic.com";
-        import { getDatabase, ref, push, onValue, set } from "https://gstatic.com";
+<div id="log"><b>System Logs:</b><br></div>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyCLA40-3U1x5g1ejwg2C8iJ5iUPXYKu0d4",
-            authDomain: "://firebaseapp.com",
-            databaseURL: "https://firebaseio.com",
-            projectId: "testing-289a9",
-            storageBucket: "testing-289a9.firebasestorage.app",
-            messagingSenderId: "884131704043",
-            appId: "1:884131704043:web:4986837e0156a0550262ae"
-        };
+<script type="module">
+    import { initializeApp } from "https://gstatic.com";
+    import { getDatabase, ref, push, onValue, set } from "https://gstatic.com";
 
+    // Debugging function
+    function addLog(msg, isError = false) {
+        const logBox = document.getElementById('log');
+        logBox.innerHTML += `<span class="${isError ? 'error' : ''}">${msg}</span><br>`;
+    }
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyCLA40-3U1x5g1ejwg2C8iJ5iUPXYKu0d4",
+        authDomain: "://firebaseapp.com",
+        // TIPS: Agar connect nahi ho raha, toh Console se exact URL copy karein
+        databaseURL: "https://testing-289a9-default-rtdb.firebaseio.com", 
+        projectId: "testing-289a9",
+        appId: "1:884131704043:web:4986837e0156a0550262ae"
+    };
+
+    try {
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
+        addLog("Firebase initialized.");
 
-        // Connection Check
-        const connectedRef = ref(db, ".info/connected");
-        onValue(connectedRef, (snap) => {
-            const statusEl = document.getElementById('status');
+        // Check Connection
+        onValue(ref(db, ".info/connected"), (snap) => {
             if (snap.val() === true) {
-                statusEl.innerText = "Connected!";
-                statusEl.className = "success";
+                document.getElementById('connStatus').innerText = "CONNECTED ✅";
+                document.getElementById('connStatus').className = "success";
+                addLog("Connected to Firebase Servers.");
             } else {
-                statusEl.innerText = "Disconnected / Permission Denied";
-                statusEl.className = "error";
+                document.getElementById('connStatus').innerText = "STILL CONNECTING... ⏳";
+                addLog("Trying to reach servers...");
             }
         });
 
-        // Save Data Function
-        window.saveData = function() {
-            const text = document.getElementById('msgInput').value;
-            const dataRef = ref(db, 'test_node');
+        // Save Function
+        window.sendData = function() {
+            const val = document.getElementById('myData').value;
+            if(!val) return alert("Kuch likho!");
             
-            push(dataRef, { message: text, time: Date.now() })
-            .then(() => {
-                alert("Saved successfully!");
-                document.getElementById('msgInput').value = "";
-            })
-            .catch((error) => {
-                console.error("Save Error:", error);
-                alert("Error: " + error.message);
-            });
-        }
+            push(ref(db, 'items'), { text: val })
+            .then(() => addLog("Data saved!"))
+            .catch(e => addLog("Save Error: " + e.message, true));
+        };
 
-        // Fetch Data
-        onValue(ref(db, 'test_node'), (snapshot) => {
-            const display = document.getElementById('display');
-            display.innerHTML = "";
-            snapshot.forEach((child) => {
-                display.innerHTML += `<p>${child.val().message}</p>`;
+        // Fetch Function
+        onValue(ref(db, 'items'), (snap) => {
+            const listDiv = document.getElementById('list');
+            listDiv.innerHTML = "<b>Latest Data:</b><br>";
+            snap.forEach(child => {
+                listDiv.innerHTML += `<div>- ${child.val().text}</div>`;
             });
         });
-    </script>
+
+    } catch (err) {
+        addLog("Critical Error: " + err.message, true);
+    }
+</script>
 </body>
 </html>
