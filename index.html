@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <title>Firebase Simple Feed</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #eef2f7; display: flex; justify-content: center; padding-top: 50px; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 350px; }
+        h3 { margin-top: 0; color: #333; text-align: center; }
+        input { width: 100%; padding: 12px; margin: 15px 0; border: 2px solid #ddd; border-radius: 8px; box-sizing: border-box; outline: none; transition: 0.3s; }
+        input:focus { border-color: #007bff; }
+        button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #0056b3; }
+        #displayArea { margin-top: 25px; border-top: 1px solid #eee; padding-top: 15px; }
+        .msg { background: #f8f9fa; padding: 10px; margin: 8px 0; border-radius: 6px; border-left: 5px solid #007bff; font-size: 14px; color: #444; word-wrap: break-word; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h3>Firebase Feed</h3>
+        <input type="text" id="userInput" placeholder="Kuch type karein...">
+        <button onclick="sendData()">Database mein Save Karein</button>
+
+        <div id="displayArea">
+            <strong>Live Data:</strong>
+            <div id="messages">Loding...</div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs (Compat Version) -->
+    <script src="https://gstatic.com"></script>
+    <script src="https://gstatic.com"></script>
+
+    <script>
+        // Aapki Config details
+        const firebaseConfig = {
+            apiKey: "AIzaSyCLA40-3U1x5g1ejwg2C8iJ5iUPXYKu0d4",
+            authDomain: "testing-289a9.firebaseapp.com",
+            databaseURL: "https://testing-289a9-default-rtdb.firebaseio.com",
+            projectId: "testing-289a9",
+            storageBucket: "testing-289a9.firebasestorage.app",
+            messagingSenderId: "884131704043",
+            appId: "1:884131704043:web:4986837e0156a0550262ae"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // Data bhejne ke liye function
+        function sendData() {
+            const inputField = document.getElementById('userInput');
+            const text = inputField.value;
+
+            if(text.trim() !== "") {
+                db.ref('feed').push({
+                    message: text,
+                    time: Date.now()
+                }).then(() => {
+                    inputField.value = ""; // Clear input
+                }).catch((error) => {
+                    alert("Error: " + error.message);
+                });
+            }
+        }
+
+        // Data real-time dikhane ke liye observer
+        db.ref('feed').on('value', (snapshot) => {
+            const messagesDiv = document.getElementById('messages');
+            messagesDiv.innerHTML = ""; 
+            
+            if (snapshot.exists()) {
+                snapshot.forEach((child) => {
+                    const data = child.val();
+                    messagesDiv.innerHTML = `<div class="msg">${data.message}</div>` + messagesDiv.innerHTML;
+                });
+            } else {
+                messagesDiv.innerHTML = "<p style='color:gray; font-size:12px;'>Database khali hai.</p>";
+            }
+        });
+    </script>
+</body>
+</html>
+
