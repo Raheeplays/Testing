@@ -1,84 +1,67 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Firebase Fix</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Video Player</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f4f4f4; }
-        .box { background: white; padding: 20px; border-radius: 10px; display: inline-block; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        #log { margin-top: 20px; text-align: left; color: #333; font-size: 12px; max-width: 400px; margin-left: auto; margin-right: auto; }
-        .error { color: red; font-weight: bold; }
-        .success { color: green; font-weight: bold; }
+        /* CSS: Styling the layout */
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #1a1a1a; /* Dark background */
+            font-family: sans-serif;
+        }
+
+        .video-container {
+            width: 90%;
+            max-width: 800px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border-radius: 12px;
+            overflow: hidden;
+            background: #000;
+        }
+
+        .responsive-iframe {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+            height: 0;
+            overflow: hidden;
+        }
+
+        .responsive-iframe iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
     </style>
 </head>
 <body>
 
-<div class="box">
-    <h2>Status: <span id="connStatus">Wait...</span></h2>
-    <input type="text" id="myData" placeholder="Type something...">
-    <button onclick="sendData()">Save & Show</button>
-    <div id="list" style="margin-top:20px;"></div>
-</div>
+    <!-- HTML: Video Container -->
+    <div class="video-container">
+        <div class="responsive-iframe">
+            <iframe 
+                src="https://www.youtube.com/embed/9c0bNFi7Fh4?si=ohACoXY67gcRZmqM" 
+                title="YouTube video player" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                referrerpolicy="strict-origin-when-cross-origin" 
+                allowfullscreen>
+            </iframe>
+        </div>
+    </div>
 
-<div id="log"><b>System Logs:</b><br></div>
+    <script>
+        // JS: Optional logic
+        console.log("Video player loaded successfully.");
+    </script>
 
-<script type="module">
-    import { initializeApp } from "https://gstatic.com";
-    import { getDatabase, ref, push, onValue, set } from "https://gstatic.com";
-
-    // Debugging function
-    function addLog(msg, isError = false) {
-        const logBox = document.getElementById('log');
-        logBox.innerHTML += `<span class="${isError ? 'error' : ''}">${msg}</span><br>`;
-    }
-
-    const firebaseConfig = {
-        apiKey: "AIzaSyCLA40-3U1x5g1ejwg2C8iJ5iUPXYKu0d4",
-        authDomain: "://firebaseapp.com",
-        // TIPS: Agar connect nahi ho raha, toh Console se exact URL copy karein
-        databaseURL: "https://testing-289a9-default-rtdb.firebaseio.com", 
-        projectId: "testing-289a9",
-        appId: "1:884131704043:web:4986837e0156a0550262ae"
-    };
-
-    try {
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-        addLog("Firebase initialized.");
-
-        // Check Connection
-        onValue(ref(db, ".info/connected"), (snap) => {
-            if (snap.val() === true) {
-                document.getElementById('connStatus').innerText = "CONNECTED ✅";
-                document.getElementById('connStatus').className = "success";
-                addLog("Connected to Firebase Servers.");
-            } else {
-                document.getElementById('connStatus').innerText = "STILL CONNECTING... ⏳";
-                addLog("Trying to reach servers...");
-            }
-        });
-
-        // Save Function
-        window.sendData = function() {
-            const val = document.getElementById('myData').value;
-            if(!val) return alert("Kuch likho!");
-            
-            push(ref(db, 'items'), { text: val })
-            .then(() => addLog("Data saved!"))
-            .catch(e => addLog("Save Error: " + e.message, true));
-        };
-
-        // Fetch Function
-        onValue(ref(db, 'items'), (snap) => {
-            const listDiv = document.getElementById('list');
-            listDiv.innerHTML = "<b>Latest Data:</b><br>";
-            snap.forEach(child => {
-                listDiv.innerHTML += `<div>- ${child.val().text}</div>`;
-            });
-        });
-
-    } catch (err) {
-        addLog("Critical Error: " + err.message, true);
-    }
-</script>
 </body>
 </html>
